@@ -13,6 +13,11 @@ int main(int argc, char *argv[])
     }
     FILE *f;
     f = fopen("output.txt", "w");
+    if (f == NULL)
+    {
+        perror("fopen");
+        return 1;
+    }
     int times = atoi(argv[4]);
     __pid_t pid = fork();
     if (pid < 0)
