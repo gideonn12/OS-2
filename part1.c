@@ -38,6 +38,7 @@ int main(int argc, char *argv[])
         }
         if (pid2 == 0)
         {
+            wait(NULL);
             for (int i = 0; i < times; i++)
             {
                 fprintf(f, "%s\n", argv[3]);
@@ -46,7 +47,6 @@ int main(int argc, char *argv[])
         }
         else
         {
-            wait(NULL);
             wait(NULL);
             for (int i = 0; i < times; i++)
             {
