@@ -14,15 +14,21 @@ int main(int argc, char *argv[]) {
     int copy_symlinks = 0;
     int copy_permissions = 0;
 
-    # HANDLE THE FLAGS HERE
+    // TODO: HANDLE THE FLAGS HERE
+    if(argv[1] == "-l"){
+        copy_symlinks = 1;
+    }
+    if(argv[1] == "-p" || argv[2] == "-p"){
+        copy_permissions = 1;
+    }
 
-    if (optind + 2 != argc) {
+    if (opt + 2 != argc) {
         print_usage(argv[0]);
         return EXIT_FAILURE;
     }
 
-    const char *src_dir = argv[optind];
-    const char *dest_dir = argv[optind + 1];
+    const char *src_dir = argv[opt];
+    const char *dest_dir = argv[opt + 1];
 
     copy_directory(src_dir, dest_dir, copy_symlinks, copy_permissions);
 
