@@ -6,8 +6,10 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
+#include <dirent.h>
 int PATH_MAX = 4096;
-void copy_file(const char *src, const char *dest, int copy_symlinks, int copy_permissions){
+void copy_file(const char *src, const char *dest, int copy_symlinks, int copy_permissions)
+{
     FILE *f;
     f = fopen(src, "r");
     if (f == NULL)
@@ -23,34 +25,78 @@ void copy_file(const char *src, const char *dest, int copy_symlinks, int copy_pe
         return;
     }
     int ch;
-    while(ch = fgetc(f) != EOF){
+    while (ch = fgetc(f) != EOF)
+    {
         fputc(ch, f2);
     }
     fclose(f);
     fclose(f2);
     // copy permissions
     struct stat st;
-    if(copy_permissions == 1){
-        if(stat(src, &st) == 0){
-            if(chmod(dest, st.st_mode) != 0){
+    if (copy_permissions == 1)
+    {
+        if (stat(src, &st) == 0)
+        {
+            if (chmod(dest, st.st_mode) != 0)
+            {
                 perror("chmod failed");
             }
         }
     }
     // copy symlinks
-    if(copy_symlinks == 1){
+    if (copy_symlinks == 1)
+    {
         char buf[PATH_MAX];
         ssize_t len = readlink(src, buf, sizeof(buf));
-        if(len != -1){
+        if (len != -1)
+        {
             buf[len] = '\0';
-            if(symlink(buf, dest) != 0){
+            if (symlink(buf, dest) != 0)
+            {
                 perror("symlink failed");
             }
         }
         perror("readlink failed");
     }
 }
-void copy_directory(const char *src, const char *dest, int copy_symlinks, int copy_permissions){
+void copy_directory(const char *src, const char *dest, int copy_symlinks, int copy_permissions)
+{
+    char src_path[PATH_MAX];
+    char dest_path[PATH_MAX];
+    DIR *dir = opendir(src);
+    struct dirent *entry;
+    struct stat st;
+    if (dir == NULL)
+    {
+        perror("opendir failed");
+        return;
+    }
+    create_dir(dest);
 
+    while ((entry = readdir(dir)) != NULL)
+    {
+         // Construct full source path
+        snprintf(src_path, sizeof(src_path), "%s/%s", src, entry->d_name);
+        // Construct full destination path
+        snprintf(dest_path, sizeof(dest_path), "%s/%s", dest, entry->d_name);
+        if (stat(entry->d_name, &st) == 0)
+        {
+            if (S_ISDIR(st.st_mode))
+            {
+                copy_directory(src_path, dest_path, copy_symlinks, copy_permissions);
+            }
+            else if (S_ISREG(st.st_mode))
+            {
+                copy_file(src_path, dest_path, copy_symlinks, copy_permissions);
+            }
+        }
+    }
+    closedir(dir);
 }
-void create_dir(){}
+void create_dir(const char *dest)
+{
+    if (mkdir(dest, 0777) != 0)
+    {
+        perror("mkdir failed");
+    }
+}
