@@ -10,6 +10,7 @@
 #include <limits.h>
 #include <linux/limits.h>
 #include <errno.h>
+#include <string.h>
 
 void copy_file(const char *src, const char *dest, int copy_symlinks, int copy_permissions)
 {
