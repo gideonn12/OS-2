@@ -9,6 +9,7 @@
 #include <dirent.h>
 #include <limits.h>
 #include <linux/limits.h>
+#include <errno.h>
 
 void copy_file(const char *src, const char *dest, int copy_symlinks, int copy_permissions)
 {
@@ -105,6 +106,11 @@ void create_dir(const char *dest)
 {
     if (mkdir(dest, 0777) != 0)
     {
+        if(errno != EEXIST){
+            return;
+        }
+        else{
         perror("mkdir failed");
+        }
     }
 }
