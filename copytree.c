@@ -79,7 +79,7 @@ void copy_directory(const char *src, const char *dest, int copy_symlinks, int co
         snprintf(src_path, sizeof(src_path), "%s/%s", src, entry->d_name);
         // Construct full destination path
         snprintf(dest_path, sizeof(dest_path), "%s/%s", dest, entry->d_name);
-        if (stat(entry->d_name, &st) == 0)
+        if (stat(src_path, &st) == 0)
         {
             if (S_ISDIR(st.st_mode))
             {
