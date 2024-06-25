@@ -10,25 +10,31 @@ void print_usage(const char *prog_name) {
 }
 
 int main(int argc, char *argv[]) {
-    int opt;
+    int optind;
     int copy_symlinks = 0;
     int copy_permissions = 0;
 
-    // TODO: HANDLE THE FLAGS HERE
-    if(argv[1] == "-l"){
-        copy_symlinks = 1;
+    while ((optind = getopt(argc, argv, "lp")) != -1){
+        switch(optind){
+            case 'l':
+                copy_symlinks = 1;
+                break;
+            case 'p':
+                copy_permissions = 1;
+                break;
+            default:
+                return EXIT_FAILURE;
+        }
     }
-    if(argv[1] == "-p" || argv[2] == "-p"){
-        copy_permissions = 1;
-    }
+    
 
-    if (opt + 2 != argc) {
+    if (optind + 2 != argc) {
         print_usage(argv[0]);
         return EXIT_FAILURE;
     }
 
-    const char *src_dir = argv[opt];
-    const char *dest_dir = argv[opt + 1];
+    const char *src_dir = argv[optind];
+    const char *dest_dir = argv[optind + 1];
 
     copy_directory(src_dir, dest_dir, copy_symlinks, copy_permissions);
 

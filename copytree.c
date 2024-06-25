@@ -1,5 +1,5 @@
 // 329924567
-#include <copytree.h>
+#include "copytree.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -7,7 +7,8 @@
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include <dirent.h>
-int PATH_MAX = 4096;
+#include <limits.h>
+
 void copy_file(const char *src, const char *dest, int copy_symlinks, int copy_permissions)
 {
     FILE *f;
