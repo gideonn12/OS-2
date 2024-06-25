@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <limits.h>
+#include <linux/limits.h>
 
 void copy_file(const char *src, const char *dest, int copy_symlinks, int copy_permissions)
 {
@@ -26,7 +27,7 @@ void copy_file(const char *src, const char *dest, int copy_symlinks, int copy_pe
         return;
     }
     int ch;
-    while (ch = fgetc(f) != EOF)
+    while ((ch = fgetc(f)) != EOF)
     {
         fputc(ch, f2);
     }
@@ -57,7 +58,9 @@ void copy_file(const char *src, const char *dest, int copy_symlinks, int copy_pe
                 perror("symlink failed");
             }
         }
+        else{
         perror("readlink failed");
+        }
     }
 }
 void copy_directory(const char *src, const char *dest, int copy_symlinks, int copy_permissions)
@@ -76,6 +79,10 @@ void copy_directory(const char *src, const char *dest, int copy_symlinks, int co
 
     while ((entry = readdir(dir)) != NULL)
     {
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+        {
+            continue;
+        }
          // Construct full source path
         snprintf(src_path, sizeof(src_path), "%s/%s", src, entry->d_name);
         // Construct full destination path
