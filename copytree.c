@@ -21,7 +21,7 @@ void copy_file(const char *src, const char *dest, int copy_symlinks, int copy_pe
         if (S_ISLNK(st.st_mode) && copy_symlinks == 1)
         {
             char buf[PATH_MAX];
-            ssize_t len = readlink(src, buf, sizeof(buf));
+            ssize_t len = readlink(src, buf, sizeof(buf));         
             if (len != -1)
             {
                 buf[len] = '\0';
@@ -34,10 +34,17 @@ void copy_file(const char *src, const char *dest, int copy_symlinks, int copy_pe
             else
             {
                 perror("readlink failed");
+                return;
             }
+        }else if(S_ISLNK(st.st_mode) && copy_symlinks == 0){
+            return;
         }
     }
-
+    else
+    {
+        perror("lstat failed");
+        return;
+    }
     FILE *f;
     f = fopen(src, "r");
     if (f == NULL)
