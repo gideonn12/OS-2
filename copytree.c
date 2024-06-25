@@ -13,6 +13,30 @@
 
 void copy_file(const char *src, const char *dest, int copy_symlinks, int copy_permissions)
 {
+    struct stat st;
+    // copy symlinks
+    if (lstat(src, &st) == 0)
+    {
+        if (S_ISLNK(st.st_mode) && copy_symlinks == 1)
+        {
+            char buf[PATH_MAX];
+            ssize_t len = readlink(src, buf, sizeof(buf));
+            if (len != -1)
+            {
+                buf[len] = '\0';
+                if (symlink(buf, dest) != 0)
+                {
+                    perror("symlink failed");
+                }
+                return;
+            }
+            else
+            {
+                perror("readlink failed");
+            }
+        }
+    }
+
     FILE *f;
     f = fopen(src, "r");
     if (f == NULL)
@@ -35,32 +59,11 @@ void copy_file(const char *src, const char *dest, int copy_symlinks, int copy_pe
     fclose(f);
     fclose(f2);
     // copy permissions
-    struct stat st;
     if (copy_permissions == 1)
     {
-        if (stat(src, &st) == 0)
+        if (chmod(dest, st.st_mode) != 0)
         {
-            if (chmod(dest, st.st_mode) != 0)
-            {
-                perror("chmod failed");
-            }
-        }
-    }
-    // copy symlinks
-    if (copy_symlinks == 1)
-    {
-        char buf[PATH_MAX];
-        ssize_t len = readlink(src, buf, sizeof(buf));
-        if (len != -1)
-        {
-            buf[len] = '\0';
-            if (symlink(buf, dest) != 0)
-            {
-                perror("symlink failed");
-            }
-        }
-        else{
-        perror("readlink failed");
+            perror("chmod failed");
         }
     }
 }
@@ -84,7 +87,7 @@ void copy_directory(const char *src, const char *dest, int copy_symlinks, int co
         {
             continue;
         }
-         // Construct full source path
+        // Construct full source path
         snprintf(src_path, sizeof(src_path), "%s/%s", src, entry->d_name);
         // Construct full destination path
         snprintf(dest_path, sizeof(dest_path), "%s/%s", dest, entry->d_name);
@@ -106,11 +109,9 @@ void create_dir(const char *dest)
 {
     if (mkdir(dest, 0777) != 0)
     {
-        if(errno != EEXIST){
-            return;
-        }
-        else{
-        perror("mkdir failed");
+        if (errno != EEXIST)
+        {
+            perror("mkdir failed");
         }
     }
 }
