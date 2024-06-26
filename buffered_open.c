@@ -32,3 +32,21 @@ buffered_file_t *buffered_open(const char *pathname, int flags, ...){
     bf->flags = flags;
     bf->preappend = (flags & O_PREAPPEND) == O_PREAPPEND;
 }
+int buffered_flush(buffered_file_t *bf){
+    ssize_t total_bytes_written = 0;
+    ssize_t bytes_written = 0;
+    while (total_bytes_written < bf -> write_buffer_pos)
+    {
+        bytes_written = write(bf->fd,bf->write_buffer+total_bytes_written,bf->write_buffer_pos - total_bytes_written);
+        if(bytes_written < 0){
+            perror("write failed");
+            return -1;
+        }
+        total_bytes_written += bytes_written;
+    }
+    bf->write_buffer_pos = 0;
+    return 0; 
+}
+ssize_t buffered_write(buffered_file_t *bf, const void *buf, size_t count){
+    
+}
