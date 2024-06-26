@@ -32,7 +32,7 @@ void copy_file(const char *src, const char *dest, int copy_symlinks, int copy_pe
         else
         {
             buf[len] = '\0';
-            if (symlink(buf, dest) != 0)
+            if (symlink(buf, dest) < 0)
             {
                 perror("symlink failed");
             }
@@ -68,7 +68,7 @@ void copy_file(const char *src, const char *dest, int copy_symlinks, int copy_pe
         // copy permissions
         if (copy_permissions == 1)
         {
-            if (chmod(dest, st.st_mode) != 0)
+            if (chmod(dest, st.st_mode) < 0)
             {
                 perror("chmod failed");
             }
