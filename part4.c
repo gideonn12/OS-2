@@ -25,6 +25,5 @@ int main(int argc, char *argv[]) {
     const char *src_dir = argv[opt];
     const char *dest_dir = argv[opt + 1];
     copy_directory(src_dir, dest_dir, copy_symlinks, copy_permissions);
-
     return 0;
 }
