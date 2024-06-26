@@ -21,7 +21,7 @@ void copy_file(const char *src, const char *dest, int copy_symlinks, int copy_pe
         if (S_ISLNK(st.st_mode) && copy_symlinks == 1)
         {
             char buf[PATH_MAX];
-            ssize_t len = readlink(src, buf, sizeof(buf));         
+            ssize_t len = readlink(src, buf, sizeof(buf));
             if (len != -1)
             {
                 buf[len] = '\0';
@@ -77,8 +77,8 @@ void copy_file(const char *src, const char *dest, int copy_symlinks, int copy_pe
 }
 void copy_directory(const char *src, const char *dest, int copy_symlinks, int copy_permissions)
 {
-    char src_path[PATH_MAX];
-    char dest_path[PATH_MAX];
+    char* src_path;
+    char* dest_path;
     DIR *dir = opendir(src);
     struct dirent *entry;
     struct stat st;
@@ -95,10 +95,16 @@ void copy_directory(const char *src, const char *dest, int copy_symlinks, int co
         {
             continue;
         }
-        // Construct full source path
-        snprintf(src_path, sizeof(src_path), "%s/%s", src, entry->d_name);
-        // Construct full destination path
-        snprintf(dest_path, sizeof(dest_path), "%s/%s", dest, entry->d_name);
+        src_path = (char*)malloc(strlen(src) + strlen(entry->d_name) + 2);
+        dest_path = (char*)malloc(strlen(dest) + strlen(entry->d_name) + 2);
+        src_path[0] = '\0';
+        dest_path[0] = '\0';
+        src_path = strncat(src_path, src, strlen(src));
+        src_path = strncat(src_path, "/", 1);
+        src_path = strncat(src_path, entry->d_name, strlen(entry->d_name));
+        dest_path = strncat(dest_path, dest, strlen(dest));
+        dest_path = strncat(dest_path, "/", 1);
+        dest_path = strncat(dest_path, entry->d_name, strlen(entry->d_name));
         if (stat(src_path, &st) == 0)
         {
             if (S_ISDIR(st.st_mode))
