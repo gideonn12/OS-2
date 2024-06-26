@@ -48,5 +48,9 @@ int buffered_flush(buffered_file_t *bf){
     return 0; 
 }
 ssize_t buffered_write(buffered_file_t *bf, const void *buf, size_t count){
-    
+    if(count + bf->write_buffer_pos > bf->write_buffer_size){
+        if(buffered_flush(bf) < 0){
+            return -1;
+        }
+    }
 }
