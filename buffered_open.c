@@ -3,6 +3,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <sys/types.h>
+
 
 buffered_file_t *buffered_open(const char *pathname, int flags, ...)
 {
@@ -62,8 +65,74 @@ int buffered_flush(buffered_file_t *bf)
 }
 ssize_t buffered_write(buffered_file_t *bf, const void *buf, size_t count)
 {
-    if (bf->preappend)
-    {
+    if (bf->preappend){
+        int temp = open("temp.txt", O_RDWR | O_CREAT | O_TRUNC, 0777);
+        if (temp < 0)
+        {
+            perror("open failed");
+            return -1;
+        }
+        char ch;
+        while (read(bf->fd, &ch, 1) > 0)
+        {
+            if(write(temp, &ch, 1) < 0){
+                perror("write failed");
+                return -1;
+            }
+        }
+        if(ftruncate(bf->fd, 0) < 0){
+            perror("ftruncate failed");
+            return -1;
+        }
+        if(lseek(bf->fd, 0, SEEK_SET) < 0){
+            perror("lseek failed");
+            return -1;
+        }
+        if(count + bf->write_buffer_pos > bf->write_buffer_size)
+        {
+            if(buffered_flush(bf) < 0){
+                perror("flush failed");
+                return -1;
+            }
+        }
+        while (count > 0)
+        {
+            if (bf->write_buffer_pos == bf->write_buffer_size)
+            {
+                if (buffered_flush(bf) < 0)
+                {
+                    perror("flush failed");
+                    return -1;
+                }
+            }
+            size_t bytes_to_copy = count;
+            if (bytes_to_copy + bf->write_buffer_pos > bf->write_buffer_size)
+            {
+                bytes_to_copy = bf->write_buffer_size - bf->write_buffer_pos;
+            }
+            memcpy(bf->write_buffer + bf->write_buffer_pos, buf, bytes_to_copy);
+            bf->write_buffer_pos += bytes_to_copy;
+            count -= bytes_to_copy;
+            buf += bytes_to_copy;
+        }
+        if(buffered_flush(bf) < 0){
+            perror("flush failed");
+            return -1;
+        }
+        if(lseek(temp, 0, SEEK_SET) < 0){
+            perror("lseek failed");
+            return -1;
+        }
+        while(read(temp, &ch, 1) > 0){
+            if(write(bf->fd, &ch, 1) < 0){
+                perror("write failed");
+                return -1;
+            }
+        }
+        if(close(temp) < 0){
+            perror("close failed");
+            return -1;
+        }
     }
     else
     {
