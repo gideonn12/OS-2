@@ -1,4 +1,8 @@
 #include "buffered_open.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 buffered_file_t *buffered_open(const char *pathname, int flags, ...)
 {
@@ -8,8 +12,9 @@ buffered_file_t *buffered_open(const char *pathname, int flags, ...)
         perror("malloc failed");
         return NULL;
     }
-    // flags &= ~O_PREAPPEND;
-    bf->fd = open(pathname, flags);
+    int tmp = flags;
+    tmp &= ~O_PREAPPEND;
+    bf->fd = open(pathname, tmp);
     if (bf->fd < 0)
     {
         perror("open failed");
@@ -57,17 +62,12 @@ int buffered_flush(buffered_file_t *bf)
 }
 ssize_t buffered_write(buffered_file_t *bf, const void *buf, size_t count)
 {
-    if (count + bf->write_buffer_pos > bf->write_buffer_size)
+    if (bf->preappend)
     {
-        if (buffered_flush(bf) < 0)
-        {
-            perror("flush failed");
-            return -1;
-        }
     }
-    while (count > 0)
+    else
     {
-        if (bf->write_buffer_pos == bf->write_buffer_size)
+        if (count + bf->write_buffer_pos > bf->write_buffer_size)
         {
             if (buffered_flush(bf) < 0)
             {
@@ -75,17 +75,28 @@ ssize_t buffered_write(buffered_file_t *bf, const void *buf, size_t count)
                 return -1;
             }
         }
-        size_t bytes_to_copy = count;
-        if (bytes_to_copy + bf->write_buffer_pos > bf->write_buffer_size)
+        while (count > 0)
         {
-            bytes_to_copy = bf->write_buffer_size - bf->write_buffer_pos;
+            if (bf->write_buffer_pos == bf->write_buffer_size)
+            {
+                if (buffered_flush(bf) < 0)
+                {
+                    perror("flush failed");
+                    return -1;
+                }
+            }
+            size_t bytes_to_copy = count;
+            if (bytes_to_copy + bf->write_buffer_pos > bf->write_buffer_size)
+            {
+                bytes_to_copy = bf->write_buffer_size - bf->write_buffer_pos;
+            }
+            memcpy(bf->write_buffer + bf->write_buffer_pos, buf, bytes_to_copy);
+            bf->write_buffer_pos += bytes_to_copy;
+            count -= bytes_to_copy;
+            buf += bytes_to_copy;
         }
-        memcpy(bf->write_buffer + bf->write_buffer_pos, buf, bytes_to_copy);
-        bf->write_buffer_pos += bytes_to_copy;
-        count -= bytes_to_copy;
-        buf += bytes_to_copy;
+        return count;
     }
-    return count;
 }
 ssize_t buffered_read(buffered_file_t *bf, void *buf, size_t count)
 {
@@ -96,21 +107,23 @@ ssize_t buffered_read(buffered_file_t *bf, void *buf, size_t count)
     }
     while (count > 0)
     {
-        if( bf->read_buffer_pos >= bf->read_buffer_size){
-            ssize_t res = read(bf->fd, bf->read_buffer,bf->read_buffer_size);
-            if(res < 0){
+        if (bf->read_buffer_pos >= bf->read_buffer_size)
+        {
+            ssize_t res = read(bf->fd, bf->read_buffer, bf->read_buffer_size);
+            if (res < 0)
+            {
                 perror("read failed");
                 return -1;
             }
         }
         bf->read_buffer_pos = 0;
         size_t bytes_to_copy = count;
-        if (bytes_to_copy > bf-> read_buffer_size - bf->read_buffer_pos)
+        if (bytes_to_copy > bf->read_buffer_size - bf->read_buffer_pos)
         {
             bytes_to_copy = bf->read_buffer_size - bf->read_buffer_pos;
         }
         memcpy(buf, bf->read_buffer + bf->read_buffer_pos, bytes_to_copy);
-        bf->read_buffer_pos += bytes_to_copy;   
+        bf->read_buffer_pos += bytes_to_copy;
         count -= bytes_to_copy;
         buf += bytes_to_copy;
     }
