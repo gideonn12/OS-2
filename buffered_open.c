@@ -53,4 +53,27 @@ ssize_t buffered_write(buffered_file_t *bf, const void *buf, size_t count){
             return -1;
         }
     }
+    while (count > 0){
+        if( bf->write_buffer_pos == bf->write_buffer_size){
+            if(buffered_flush(bf) < 0){
+                return -1;
+            }
+        }
+        size_t bytes_to_copy = count;
+        if(bytes_to_copy + bf->write_buffer_pos > bf->write_buffer_size){
+            bytes_to_copy = bf->write_buffer_size - bf->write_buffer_pos;
+        }
+        memcpy(bf->write_buffer + bf->write_buffer_pos,buf,bytes_to_copy);
+        bf->write_buffer_pos += bytes_to_copy;
+        count -= bytes_to_copy;
+        buf += bytes_to_copy;
+    }
+    return count;
+}
+ssize_t buffered_read(buffered_file_t *bf, void *buf, size_t count){
+
+}
+
+int buffered_close(buffered_file_t *bf){
+    
 }
