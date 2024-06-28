@@ -72,16 +72,18 @@ ssize_t buffered_write(buffered_file_t *bf, const void *buf, size_t count)
             perror("lseek failed");
             return -1;
         }
-        char *temp_buf = (char *)malloc(100);
-        temp_buf[0] = '\0';
+        int temp = open("temp.txt", O_RDWR | O_CREAT, 0777);
+        // char *temp_buf = (char *)malloc(100);
+        // temp_buf[0] = '\0';
         char ch;
-        char *start = temp_buf;
+        // char *start = temp_buf;
         while (read(bf->fd, &ch, 1) > 0)
         {
-            *temp_buf = ch;
-            temp_buf++;
+            write(temp, &ch, 1);
+            // *temp_buf = ch;
+            // temp_buf++;
         }
-        *temp_buf = '\0';
+        // *temp_buf = '\0';
         if (ftruncate(bf->fd, 0) < 0)
         {
             perror("ftruncate failed");
@@ -117,15 +119,23 @@ ssize_t buffered_write(buffered_file_t *bf, const void *buf, size_t count)
             perror("flush failed");
             return -1;
         }
-        while (start != temp_buf)
+        if(lseek(temp, 0, SEEK_SET) < 0){
+            perror("lseek failed");
+            return -1;
+        }
+        while (read(temp, &ch, 1) > 0)
         {
-            if (write(bf->fd, start, 1) < 0)
+            if (write(bf->fd, &ch, 1) < 0)
             {
                 perror("buffered_write failed");
                 return -1;
             }
-            start++;
         }
+        if(close(temp) < 0){
+            perror("close failed");
+            return -1;
+        }
+        remove("temp.txt");
     }
     else
     {
