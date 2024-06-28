@@ -3,7 +3,7 @@
 #include <string.h>
 
 int main() {
-    buffered_file_t *bf = buffered_open("example.txt", O_RDWR | O_CREAT , 0777);
+    buffered_file_t *bf = buffered_open("example.txt", O_RDWR | O_CREAT | O_PREAPPEND , 0777);
     if (!bf) {
         perror("buffered_open");
         return 1;

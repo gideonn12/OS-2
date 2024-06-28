@@ -65,7 +65,67 @@ int buffered_flush(buffered_file_t *bf)
 }
 ssize_t buffered_write(buffered_file_t *bf, const void *buf, size_t count)
 {
-    if (bf->preappend){
+    if (bf->preappend)
+    {
+        if (lseek(bf->fd, 0, SEEK_SET) < 0)
+        {
+            perror("lseek failed");
+            return -1;
+        }
+        char *temp_buf = (char *)malloc(100);
+        temp_buf[0] = '\0';
+        char ch;
+        char *start = temp_buf;
+        while (read(bf->fd, &ch, 1) > 0)
+        {
+            *temp_buf = ch;
+            temp_buf++;
+        }
+        *temp_buf = '\0';
+        if (ftruncate(bf->fd, 0) < 0)
+        {
+            perror("ftruncate failed");
+            return -1;
+        }
+        if (lseek(bf->fd, 0, SEEK_SET) < 0)
+        {
+            perror("lseek failed");
+            return -1;
+        }
+        while (count > 0)
+        {
+            if (bf->write_buffer_pos >= bf->write_buffer_size)
+            {
+                if (buffered_flush(bf) < 0)
+                {
+                    perror("flush failed");
+                    return -1;
+                }
+            }
+            size_t bytes_to_copy = count;
+            if (bytes_to_copy > bf->write_buffer_size - bf->write_buffer_pos)
+            {
+                bytes_to_copy = bf->write_buffer_size - bf->write_buffer_pos;
+            }
+            memcpy(bf->write_buffer + bf->write_buffer_pos, buf, bytes_to_copy);
+            bf->write_buffer_pos += bytes_to_copy;
+            count -= bytes_to_copy;
+            buf += bytes_to_copy;
+        }
+        if (buffered_flush(bf) < 0)
+        {
+            perror("flush failed");
+            return -1;
+        }
+        while (start != temp_buf)
+        {
+            if (write(bf->fd, start, 1) < 0)
+            {
+                perror("buffered_write failed");
+                return -1;
+            }
+            start++;
+        }
     }
     else
     {
