@@ -5,9 +5,14 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/types.h>
-
+#include <stdarg.h>
 buffered_file_t *buffered_open(const char *pathname, int flags, ...)
 {
+    va_list args;
+    va_start(args, flags);
+    int permissions = NULL;
+    permissions =va_arg(args, int);
+    va_end(args);
     buffered_file_t *bf = (buffered_file_t *)malloc(sizeof(buffered_file_t));
     if (bf == NULL)
     {
@@ -16,7 +21,10 @@ buffered_file_t *buffered_open(const char *pathname, int flags, ...)
     }
     int tmp = flags;
     tmp &= ~O_PREAPPEND;
-    bf->fd = open(pathname, tmp);
+    if(permissions != NULL)
+        bf->fd = open(pathname, tmp, permissions);
+    else
+        bf->fd = open(pathname, tmp);
     if (bf->fd < 0)
     {
         perror("open failed");
