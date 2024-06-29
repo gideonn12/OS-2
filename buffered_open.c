@@ -11,7 +11,7 @@ buffered_file_t *buffered_open(const char *pathname, int flags, ...)
     va_list args;
     va_start(args, flags);
     int permissions = NULL;
-    permissions =va_arg(args, int);
+    permissions = va_arg(args, int);
     va_end(args);
     buffered_file_t *bf = (buffered_file_t *)malloc(sizeof(buffered_file_t));
     if (bf == NULL)
@@ -21,7 +21,7 @@ buffered_file_t *buffered_open(const char *pathname, int flags, ...)
     }
     int tmp = flags;
     tmp &= ~O_PREAPPEND;
-    if(permissions != NULL)
+    if (permissions != NULL)
         bf->fd = open(pathname, tmp, permissions);
     else
         bf->fd = open(pathname, tmp);
@@ -121,7 +121,8 @@ ssize_t buffered_write(buffered_file_t *bf, const void *buf, size_t count)
             perror("flush failed");
             return -1;
         }
-        if(lseek(temp, 0, SEEK_SET) < 0){
+        if (lseek(temp, 0, SEEK_SET) < 0)
+        {
             perror("lseek failed");
             return -1;
         }
@@ -133,7 +134,8 @@ ssize_t buffered_write(buffered_file_t *bf, const void *buf, size_t count)
                 return -1;
             }
         }
-        if(close(temp) < 0){
+        if (close(temp) < 0)
+        {
             perror("close failed");
             return -1;
         }
@@ -179,9 +181,10 @@ ssize_t buffered_read(buffered_file_t *bf, void *buf, size_t count)
         perror("flush failed");
         return -1;
     }
+    size_t total_bytes_read = 0;
     while (count > 0)
     {
-        if (bf->read_buffer_pos >= bf->read_buffer_size)
+        if (bf->read_buffer_pos >= bf->read_buffer_size || bf->read_buffer_pos == 0)
         {
             ssize_t res = read(bf->fd, bf->read_buffer, bf->read_buffer_size);
             if (res < 0)
@@ -189,21 +192,18 @@ ssize_t buffered_read(buffered_file_t *bf, void *buf, size_t count)
                 perror("read failed");
                 return -1;
             }
+            bf->read_buffer_pos = 0;
         }
-        bf->read_buffer_pos = 0;
-        size_t bytes_to_copy = count;
-        if (bytes_to_copy > bf->read_buffer_size - bf->read_buffer_pos)
-        {
-            bytes_to_copy = bf->read_buffer_size - bf->read_buffer_pos;
-        }
+        size_t bytes_available = bf->read_buffer_size - bf->read_buffer_pos;
+        size_t bytes_to_copy = (bytes_available < count) ? bytes_available : count;
         memcpy(buf, bf->read_buffer + bf->read_buffer_pos, bytes_to_copy);
         bf->read_buffer_pos += bytes_to_copy;
+        buf = (char*)buf + bytes_to_copy;
         count -= bytes_to_copy;
-        buf += bytes_to_copy;
+        total_bytes_read += bytes_to_copy;
     }
-    return count;
+    return total_bytes_read; 
 }
-
 int buffered_close(buffered_file_t *bf)
 {
     if (buffered_flush(bf) < 0)

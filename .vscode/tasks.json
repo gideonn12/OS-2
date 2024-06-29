@@ -8,7 +8,7 @@
                 "-fdiagnostics-color=always",
                 "-g",
                 "buffered_open.c",
-                "testpart3.c",
+                "test3.c",
                 "-o",
                 "${fileDirname}/${fileBasenameNoExtension}"
             ],
