@@ -81,17 +81,11 @@ ssize_t buffered_write(buffered_file_t *bf, const void *buf, size_t count)
             return -1;
         }
         int temp = open("temp.txt", O_RDWR | O_CREAT, 0777);
-        // char *temp_buf = (char *)malloc(100);
-        // temp_buf[0] = '\0';
         char ch;
-        // char *start = temp_buf;
         while (read(bf->fd, &ch, 1) > 0)
         {
             write(temp, &ch, 1);
-            // *temp_buf = ch;
-            // temp_buf++;
         }
-        // *temp_buf = '\0';
         if (ftruncate(bf->fd, 0) < 0)
         {
             perror("ftruncate failed");
@@ -135,7 +129,7 @@ ssize_t buffered_write(buffered_file_t *bf, const void *buf, size_t count)
         {
             if (write(bf->fd, &ch, 1) < 0)
             {
-                perror("buffered_write failed");
+                perror("write failed");
                 return -1;
             }
         }
