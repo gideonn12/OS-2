@@ -81,6 +81,11 @@ ssize_t buffered_write(buffered_file_t *bf, const void *buf, size_t count)
             return -1;
         }
         int temp = open("temp.txt", O_RDWR | O_CREAT, 0777);
+        if (temp < 0)
+        {
+            perror("open failed");
+            return -1;
+        }
         char ch;
         while (read(bf->fd, &ch, 1) > 0)
         {
